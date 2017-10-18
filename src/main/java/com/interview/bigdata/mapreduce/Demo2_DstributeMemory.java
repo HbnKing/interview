@@ -26,6 +26,13 @@ import org.apache.hadoop.fs.FileSystem;
 4	1_-2,2_2,3_-1,4_1,5_2
  * 
  * 
+ 转换后
+1	3_0,1_0,4_-2,2_1
+2	3_1,4_2,2_3,1_3
+3	4_-1,1_-1,3_4,2_4
+4	1_2,3_-1,4_1,2_-2
+5	4_2,3_2,1_-3,2_-1
+ * 
  * 
  */
 
@@ -39,6 +46,7 @@ public class Demo2_DstributeMemory extends  Configured  {
 		public  void map(LongWritable key,Text value, Context context) throws IOException, InterruptedException{
 			String[] rowline = value.toString().split("\t");
 			 
+			String row = rowline[0];
 			String[] lineStrings = rowline[1].split(",");
 			
 			for(int i = 0; i<lineStrings.length;i++){
@@ -46,7 +54,7 @@ public class Demo2_DstributeMemory extends  Configured  {
 				String valuestr = lineStrings[i].split("_")[1];
 			//key :列号    value   列值
 				outkey.set(column);
-				outvalue.set(valuestr);
+				outvalue.set(row+"_"+valuestr);
 				context.write(outkey, outvalue);
 			}
 			
@@ -57,7 +65,7 @@ public class Demo2_DstributeMemory extends  Configured  {
 		private  Text outkey2 = new Text();
 		private  Text outvalue2 = new Text();
 		
-		public void reduce(Text key, Iterable<Text> values,Context context){
+		public void reduce(Text key, Iterable<Text> values,Context context) throws IOException, InterruptedException{
 			//将列转换为行  
 			StringBuffer sBuffer = new StringBuffer();
 			for(Text t:values){
@@ -71,6 +79,8 @@ public class Demo2_DstributeMemory extends  Configured  {
 			}
 			outkey2.set(key);
 			outvalue2.set(line);
+			
+			context.write(outkey2, outvalue2);
 			
 		}
 	}
@@ -92,9 +102,9 @@ public class Demo2_DstributeMemory extends  Configured  {
 	
 	
 	//设置几个静态量
-	static	String inpath = "hadoop/matrix/555.txt";
-	static	String outpath = "hadoop/matrix/out";
-	static	String hdfs = "hdfs://sla1:9000";
+	private static	String inpath = "hdfs://sla1:9000/hadoop/matrix/555.txt";
+	private static	String outpath = "hdfs://sla1:9000/hadoop/matrix/out";
+	private static	String hdfs = "hdfs://sla1:9000";
 	
 
 	//设置run方法
